@@ -1,0 +1,113 @@
+mql5
+//+------------------------------------------------------------------+
+//|                            Terms of Reference                     |
+//|                   Code Development for Advanced Charting           |
+//|                 and Order Management MT4 Product                  |
+//|------------------------------------------------------------------|
+//|                                                                  |
+//| Developer's Site: forexroboteasy.com                              |
+//| Development Name: Forex Robot Easy Team                           |
+//|                                                                  |
+//| Description:                                                     |
+//| Develop code for an advanced charting and order management system|
+//| for Forex trading. The code will be used to create a platform     |
+//| called T Manager Plus, which combines trade management, trade     |
+//| assistance, and advanced charting facilities.                     |
+//|                                                                  |
+//| Requirements:                                                    |
+//| 1. Trade Planning Functionality:                                  |
+//|    - Graphical interface for easy trade planning.                 |
+//|    - Ability to set price trade, stop loss, and take profit.      |
+//|    - Automated risk calculation feature to set risk as a          |
+//|      percentage of balance.                                       |
+//|    - Calculation of monetary value of risk.                       |
+//|    - Display of reward-to-risk ratio before entering any trade.   |
+//| 2. Trade Execution Functionality:                                 |
+//|    - Simple execution of trades with a single click.              |
+//|    - Ability to set orders quickly and efficiently.               |
+//|                                                                  |
+//+------------------------------------------------------------------+
+
+// Define global variables
+extern double riskPercentage = 2.0; // Risk percentage of balance
+
+//+------------------------------------------------------------------+
+//|                     Trade Planning Functionality                  |
+//+------------------------------------------------------------------+
+
+// Function to calculate monetary value of risk
+double CalculateRisk()
+{
+    double balance = AccountBalance();
+    double riskAmount = balance * (riskPercentage / 100.0);
+    return riskAmount;
+}
+
+// Function to display reward-to-risk ratio
+double CalculateRewardToRiskRatio(double entryPrice, double stopLoss, double takeProfit)
+{
+    double reward = takeProfit - entryPrice;
+    double risk = entryPrice - stopLoss;
+    double rewardToRiskRatio = reward / risk;
+    return rewardToRiskRatio;
+}
+
+//+------------------------------------------------------------------+
+//|                   Trade Execution Functionality                   |
+//+------------------------------------------------------------------+
+
+// Function to execute a trade with a single click
+void ExecuteTrade(string symbol, int type, double lots, double price, double stopLoss, double takeProfit)
+{
+    int ticket = OrderSend(symbol, type, lots, price, 0, stopLoss, takeProfit, 'Trade Execution');
+    
+    if(ticket > 0)
+    {
+        Print('Trade executed successfully. Ticket: ', ticket);
+    }
+    else
+    {
+        Print('Trade execution failed. Error code: ', GetLastError());
+    }
+}
+
+// Function to set orders quickly and efficiently
+void SetOrders(string symbol, double entryPrice, double stopLoss, double takeProfit)
+{
+    double lotSize = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MIN);
+    
+    if(lotSize > 0)
+    {
+        double riskAmount = CalculateRisk();
+        double lots = riskAmount / (stopLoss - entryPrice);
+        
+        if(lots > lotSize)
+        {
+            lots = NormalizeDouble(lotSize, 2);
+        }
+        
+        ExecuteTrade(symbol, ORDER_TYPE_BUY, lots, entryPrice, stopLoss, takeProfit);
+    }
+    else
+    {
+        Print('Symbol ', symbol, ' does not exist.');
+    }
+}
+
+//+------------------------------------------------------------------+
+//|                        Logical Conclusion                        |
+//+------------------------------------------------------------------+
+
+// Example usage of the trade planning and execution functionality
+void OnStart()
+{
+    string symbol = 'EURUSD';
+    double entryPrice = 1.2000;
+    double stopLoss = 1.1900;
+    double takeProfit = 1.2200;
+    
+    double rewardToRiskRatio = CalculateRewardToRiskRatio(entryPrice, stopLoss, takeProfit);
+    Print('Reward-to-Risk Ratio: ', rewardToRiskRatio);
+    
+    SetOrders(symbol, entryPrice, stopLoss, takeProfit);
+}
